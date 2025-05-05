@@ -1,31 +1,8 @@
-<div :class="getStyles()" role="document" x-data="Challenge" x-init="id = {{ challenge.id }}; max_attempts = {{ max_attempts }}; attempts = {{ attempts }}">
+<div :class="getStyles()" role="document" x-data="Challenge" x-init="id = {{ challenge.id }}; max_attempts = {{ max_attempts }}; attempts = {{ attempts }}; showSolves()">
   <div class="modal-content">
     <div class="modal-body py-4 px-4 px-sm-5">
-
       <div>
-        <button type="button" class="btn-close float-end" data-bs-dismiss="modal" aria-label="Close"></button>
-
-        <ul class="nav nav-tabs">
-          <li class="nav-item">
-            <button class="nav-link active" data-bs-target="#challenge" @click="showChallenge()">
-              {% trans %}Challenge{% endtrans %}
-            </button>
-          </li>
-
-          {% block solves %}
-            <li class="nav-item">
-              <button class="nav-link challenge-solves" data-bs-target="#solves" @click="showSolves()">
-                {% if solves != None %}
-                  {{ ngettext("%(num)d Solve", "%(num)d Solves", solves) }}
-                {% endif %}
-              </button>
-            </li>
-          {% endblock %}
-        </ul>
-      </div>
-
-      <div>
-        <div class="tab-content">
+        <div>
           <div role="tabpanel" class="tab-pane fade show active" id="challenge">
             <h2 class="challenge-name text-center pt-3">
               {{ challenge.name }}
@@ -33,7 +10,6 @@
             <h3 class="challenge-value text-center">
               {{ challenge.value }}
             </h3>
-
 
             {% if tags %}
               <div class="challenge-tags text-center pt-2 pb-3">
@@ -167,64 +143,42 @@
                       }" role="alert"
                   >
                     <strong x-text="response.data.message"></strong>
-                    <div x-show="(response.data.status == 'correct' || response.data.status == 'already_solved')">
-                      <div x-show="getNextId()">
-                        <button @click="nextChallenge()" class="btn btn-info mt-3">
-                          {% trans %}Next Challenge{% endtrans %}
-                        </button>
-                      </div>
-                      {% if Configs.social_shares %}
-                      <div>
-                        <button x-show="!share_url" @click="getShareUrl()" class="btn btn-sm btn-outline-info mt-3">
-                          {% trans %}Share{% endtrans %}
-                        </button>
-                        <div class="btn-group mt-3" role="group" x-show="share_url">
-                          <button type="button" class="btn btn-sm btn-outline-secondary" @click="copyShareUrl()" data-bs-toggle="tooltip" data-bs-title="Copied!">
-                            <i class="fa-solid fa-copy"></i>
-                          </button>
-                          <a :href="'https://twitter.com/intent/tweet?url=' + encodeURIComponent(share_url)" role="button" class="btn btn-sm btn-outline-secondary" target="_blank">
-                            <i class="fa-brands fa-twitter"></i>
-                          </a>
-                          <a :href="'https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(share_url)" role="button" class="btn btn-sm btn-outline-secondary" target="_blank">
-                            <i class="fa-brands fa-facebook-f"></i>
-                          </a>
-                          <a :href="'http://www.linkedin.com/shareArticle?url=' + encodeURIComponent(share_url)" role="button" class="btn btn-sm btn-outline-secondary" target="_blank">
-                            <i class="fa-brands fa-linkedin-in"></i>
-                          </a>
-                        </div>
-                      </div>
-                      {% endif %}
-                    </div>
                   </div>
                 </template>
               </div>
             </div>
           </div>
 
-          <div role="tabpanel" class="tab-pane fade" id="solves">
-            <div class="row">
-              <div class="col-md-12">
-                <table class="table table-striped align-middle text-center">
-                  <thead>
-                  <tr>
-                    <th>{% trans %}Name{% endtrans %}</th>
-                    <th>{% trans %}Date{% endtrans %}</th>
-                  </tr>
-                  </thead>
-                  <tbody id="challenge-solves-names">
-                  <template x-for="solve in solves">
+          <!-- Solves Section - Always visible -->
+          <template x-if="solves !== null">
+            <div class="solves-section mt-4">
+              {% if solves != None %}
+              <h5 x-text="solves.length + ' Solve' + (solves.length == 1 ? '' : 's')"></h5>
+              {% endif %}
+              <div class="row">
+                <div class="col-md-12">
+                  <table class="table table-striped align-middle text-center">
+                    <thead>
                     <tr>
-                      <td>
-                        <a :href="solve.account_url" x-text="solve.name"></a>
-                      </td>
-                      <td x-text="solve.date"></td>
+                      <th>{% trans %}Name{% endtrans %}</th>
+                      <th>{% trans %}Date{% endtrans %}</th>
                     </tr>
-                  </template>
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody id="challenge-solves-names">
+                    <template x-for="solve in solves">
+                      <tr>
+                        <td>
+                          <a :href="solve.account_url" x-text="solve.name"></a>
+                        </td>
+                        <td x-text="solve.date"></td>
+                      </tr>
+                    </template>
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
-          </div>
+          </template>
         </div>
       </div>
     </div>

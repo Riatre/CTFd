@@ -24,6 +24,11 @@ Alpine.store("challenge", {
   },
 });
 
+// Create a store to hold challenges data
+Alpine.store("challenges", {
+  challengeViews: {},
+});
+
 Alpine.data("Hint", () => ({
   id: null,
   html: null,
@@ -60,7 +65,7 @@ Alpine.data("Challenge", () => ({
   next_id: null,
   submission: "",
   tab: null,
-  solves: [],
+  solves: null,
   response: null,
   share_url: null,
   max_attempts: 0,
@@ -71,34 +76,7 @@ Alpine.data("Challenge", () => ({
   },
 
   getStyles() {
-    let styles = {
-      "modal-dialog": true,
-    };
-    try {
-      let size = CTFd.config.themeSettings.challenge_window_size;
-      switch (size) {
-        case "sm":
-          styles["modal-sm"] = true;
-          break;
-        case "lg":
-          styles["modal-lg"] = true;
-          break;
-        case "xl":
-          styles["modal-xl"] = true;
-          break;
-        default:
-          break;
-      }
-    } catch (error) {
-      // Ignore errors with challenge window size
-      console.log("Error processing challenge_window_size");
-      console.log(error);
-    }
-    return styles;
-  },
-
-  async init() {
-    highlight();
+    return {};
   },
 
   async showChallenge() {
@@ -111,55 +89,6 @@ Alpine.data("Challenge", () => ({
       solve.date = dayjs(solve.date).format("MMMM Do, h:mm:ss A");
       return solve;
     });
-    new Tab(this.$el).show();
-  },
-
-  getNextId() {
-    let data = Alpine.store("challenge").data;
-    return data.next_id;
-  },
-
-  async nextChallenge() {
-    let modal = Modal.getOrCreateInstance("[x-ref='challengeWindow']");
-
-    // TODO: Get rid of this private attribute access
-    // See https://github.com/twbs/bootstrap/issues/31266
-    modal._element.addEventListener(
-      "hidden.bs.modal",
-      event => {
-        // Dispatch load-challenge event to call loadChallenge in the ChallengeBoard
-        Alpine.nextTick(() => {
-          this.$dispatch("load-challenge", this.getNextId());
-        });
-      },
-      { once: true },
-    );
-    modal.hide();
-  },
-
-  async getShareUrl() {
-    let body = {
-      type: "solve",
-      challenge_id: this.id,
-    };
-    const response = await CTFd.fetch("/api/v1/shares", {
-      method: "POST",
-      body: JSON.stringify(body),
-    });
-    const data = await response.json();
-    const url = data["data"]["url"];
-    this.share_url = url;
-  },
-
-  copyShareUrl() {
-    navigator.clipboard.writeText(this.share_url);
-    let t = Tooltip.getOrCreateInstance(this.$el);
-    t.enable();
-    t.show();
-    setTimeout(() => {
-      t.hide();
-      t.disable();
-    }, 2000);
   },
 
   async submitChallenge() {
@@ -174,113 +103,105 @@ Alpine.data("Challenge", () => ({
   async renderSubmissionResponse() {
     if (this.response.data.status === "correct") {
       this.submission = "";
+      await this.showSolves();
     }
 
     // Increment attempts counter
     if (this.max_attempts > 0 && this.response.data.status != "already_solved") {
       this.attempts += 1;
     }
-
-    // Dispatch load-challenges event to call loadChallenges in the ChallengeBoard
-    this.$dispatch("load-challenges");
   },
 }));
 
 Alpine.data("ChallengeBoard", () => ({
   loaded: false,
   challenges: [],
-  challenge: null,
+  activeChallengeId: null,
+  initialHash: window.location.hash,
 
   async init() {
-    this.challenges = await CTFd.pages.challenges.getChallenges();
+    await this.loadChallenges();
     this.loaded = true;
 
-    if (window.location.hash) {
-      let chalHash = decodeURIComponent(window.location.hash.substring(1));
-      let idx = chalHash.lastIndexOf("-");
-      if (idx >= 0) {
-        let pieces = [chalHash.slice(0, idx), chalHash.slice(idx + 1)];
-        let id = pieces[1];
-        await this.loadChallenge(id);
-      }
+    // After loading, handle initial hash if it exists
+    if (this.initialHash) {
+      this.handleUrlHash(this.initialHash);
     }
-  },
-
-  getCategories() {
-    const categories = [];
-
-    this.challenges.forEach(challenge => {
-      const { category } = challenge;
-
-      if (!categories.includes(category)) {
-        categories.push(category);
-      }
-    });
-
-    try {
-      const f = CTFd.config.themeSettings.challenge_category_order;
-      if (f) {
-        const getSort = new Function(`return (${f})`);
-        categories.sort(getSort());
-      }
-    } catch (error) {
-      // Ignore errors with theme category sorting
-      console.log("Error running challenge_category_order function");
-      console.log(error);
-    }
-
-    return categories;
-  },
-
-  getChallenges(category) {
-    let challenges = this.challenges;
-
-    if (category !== null) {
-      challenges = this.challenges.filter(challenge => challenge.category === category);
-    }
-
-    try {
-      const f = CTFd.config.themeSettings.challenge_order;
-      if (f) {
-        const getSort = new Function(`return (${f})`);
-        challenges.sort(getSort());
-      }
-    } catch (error) {
-      // Ignore errors with theme challenge sorting
-      console.log("Error running challenge_order function");
-      console.log(error);
-    }
-
-    return challenges;
   },
 
   async loadChallenges() {
     this.challenges = await CTFd.pages.challenges.getChallenges();
+    
+    // Select default challenge if we don't have a hash
+    if (!this.initialHash && this.challenges.length > 0) {
+      await this.loadChallenge(this.challenges[0].id);
+    }
+  },
+
+  async handleUrlHash(hash) {
+    if (!hash) return;
+    
+    const chalHash = decodeURIComponent(hash.substring(1));
+    const idx = chalHash.lastIndexOf("-");
+    if (idx >= 0) {
+      const challengeId = chalHash.slice(idx + 1);
+      if (this.challenges.some(c => c.id.toString() === challengeId)) {
+        await this.loadChallenge(challengeId);
+      } else if (this.challenges.length > 0) {
+        // If challenge from hash doesn't exist, load the first challenge
+        await this.loadChallenge(this.challenges[0].id);
+      }
+    }
   },
 
   async loadChallenge(challengeId) {
-    await CTFd.pages.challenge.displayChallenge(challengeId, challenge => {
-      challenge.data.view = addTargetBlank(challenge.data.view);
-      Alpine.store("challenge").data = challenge.data;
-
-      // nextTick is required here because we're working in a callback
-      Alpine.nextTick(() => {
-        let modal = Modal.getOrCreateInstance("[x-ref='challengeWindow']");
-        // TODO: Get rid of this private attribute access
-        // See https://github.com/twbs/bootstrap/issues/31266
-        modal._element.addEventListener(
-          "hidden.bs.modal",
-          event => {
-            // Remove location hash
-            history.replaceState(null, null, " ");
-          },
-          { once: true },
-        );
-        modal.show();
+    // Update active challenge ID for tab selection
+    this.activeChallengeId = challengeId;
+    
+    // Check if we've already loaded this challenge
+    if (!Alpine.store("challenges").challengeViews[challengeId]) {
+      await CTFd.pages.challenge.displayChallenge(challengeId, challenge => {
+        challenge.data.view = addTargetBlank(challenge.data.view);
+        // Store this specific challenge view in our challengeViews store
+        Alpine.store("challenges").challengeViews[challengeId] = challenge.data.view;
+        // Also update the main challenge store for Alpine bindings
+        Alpine.store("challenge").data = challenge.data;
+        
+        // Update URL hash
         history.replaceState(null, null, `#${challenge.data.name}-${challengeId}`);
+        
+        // Activate the tab programmatically after content has been loaded
+        this.$nextTick(() => {
+          const tabEl = document.getElementById(`challenge-tab-${challengeId}`);
+          if (tabEl) {
+            new Tab(tabEl).show();
+          }
+        });
       });
-    });
+    } else {
+      // If we've already loaded this challenge, just update the main store
+      // with the details for binding data like next_id
+      await CTFd.pages.challenge.displayChallenge(challengeId, challenge => {
+        Alpine.store("challenge").data = challenge.data;
+        
+        // Update URL hash
+        history.replaceState(null, null, `#${challenge.data.name}-${challengeId}`);
+        
+        // Activate the tab programmatically
+        this.$nextTick(() => {
+          const tabEl = document.getElementById(`challenge-tab-${challengeId}`);
+          if (tabEl) {
+            new Tab(tabEl).show();
+          }
+        });
+      });
+    }
   },
+
+  getChallengeView(challengeId) {
+    // Retrieve the challenge view HTML from our store
+    return Alpine.store("challenges").challengeViews[challengeId] || "";
+  }
 }));
 
 Alpine.start();

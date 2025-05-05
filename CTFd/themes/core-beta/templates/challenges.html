@@ -1,14 +1,6 @@
 {% extends "base.html" %}
 
 {% block content %}
-  <div class="jumbotron">
-    <div class="container">
-      <h1>
-        {% trans %}Challenges{% endtrans %}
-      </h1>
-    </div>
-  </div>
-
   <div class="container">
     <div class="row">
       <div class="col-md-12">
@@ -20,12 +12,8 @@
       x-data="ChallengeBoard" 
       @load-challenges.window="loadChallenges()" 
       @load-challenge.window="loadChallenge($event.detail)"
+      x-init="$nextTick(() => { window.addEventListener('hashchange', () => handleUrlHash(window.location.hash)) })"
     >
-      <div
-          x-ref="challengeWindow" id="challenge-window" class="modal fade" tabindex="-1" role="dialog" x-data=""
-          x-html="$store.challenge.data.view"
-      ></div>
-
       <div x-show="!loaded">
         <div class="min-vh-50 d-flex align-items-center">
           <div class="text-center w-100">
@@ -35,33 +23,57 @@
       </div>
 
       <div x-show="loaded">
-        <template x-for="(category, idx) in getCategories()" :key="idx">
-          <div class="pt-5">
-            <div class="category-header mb-3">
-              <h3 x-text="category"></h3>
-            </div>
-
-            <div class="category-challenges d-flex flex-column">
-              <div class="challenges-row row">
-                <template x-for="(c, idx) in getChallenges(category)" :key="c.id">
-                  <div class="col-sm-6 col-md-4 col-lg-3 my-3">
-                    <button
-                        class="challenge-button btn btn-dark w-100 h-100"
-                        :class="[
-                          c.solved_by_me ? 'challenge-solved' : '',
-                          ...c.tags.map((tag) => `tag-${tag.value.replace(/ /g, '-')}`),
-                        ];"
-                        :value="c.id" @click="loadChallenge(c.id)"
-                    >
-
-                      <div class="challenge-inner my-3">
-                        <p x-text="c.name"></p>
-                        <span x-text="c.value"></span>
-                      </div>
-                    </button>
+        <!-- Single challenge mode - directly show challenge without tabs -->
+        <template x-if="challenges.length === 1">
+          <div
+              id="single-challenge-container" class="pt-3" x-data=""
+              x-html="getChallengeView(challenges[0].id)"
+          ></div>
+        </template>
+        
+        <!-- Multiple challenges mode - use tabs -->
+        <template x-if="challenges.length > 1">
+          <div>
+            <!-- Challenge tabs -->
+            <ul class="nav nav-tabs" id="challenge-tabs" role="tablist">
+              <template x-for="(challenge, idx) in challenges" :key="challenge.id">
+                <li class="nav-item" role="presentation">
+                  <button 
+                    class="nav-link" 
+                    :class="{'active': challenge.id === activeChallengeId}"
+                    :id="'challenge-tab-' + challenge.id" 
+                    data-bs-toggle="tab" 
+                    :data-bs-target="'#challenge-' + challenge.id" 
+                    type="button" 
+                    role="tab"
+                    :aria-controls="'challenge-' + challenge.id"
+                    :aria-selected="challenge.id === activeChallengeId ? 'true' : 'false'"
+                    @click="loadChallenge(challenge.id)"
+                  >
+                    <span 
+                      x-text="challenge.name"
+                      :class="{'text-success': challenge.solved_by_me}"
+                    ></span>
+                  </button>
+                </li>
+              </template>
+            </ul>
+            
+            <!-- Tab content -->
+            <div class="tab-content" id="challenge-tab-content">
+              <template x-for="(challenge, idx) in challenges" :key="challenge.id">
+                <div 
+                  class="tab-pane fade" 
+                  :class="{'show active': challenge.id === activeChallengeId}"
+                  :id="'challenge-' + challenge.id" 
+                  role="tabpanel"
+                  :aria-labelledby="'challenge-tab-' + challenge.id"
+                >
+                  <div :id="'challenge-container-' + challenge.id" class="pt-3"
+                       x-data="" x-html="getChallengeView(challenge.id)">
                   </div>
-                </template>
-              </div>
+                </div>
+              </template>
             </div>
           </div>
         </template>

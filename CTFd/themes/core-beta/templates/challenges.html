@@ -23,6 +23,11 @@
       </div>
 
       <div x-show="loaded">
+        <template x-if="challenges.length === 0">
+          <div class="text-center w-100">
+            <h1>No challenge available at this time.</h1>
+          </div>
+        </template>
         <!-- Single challenge mode - directly show challenge without tabs -->
         <template x-if="challenges.length === 1">
           <div

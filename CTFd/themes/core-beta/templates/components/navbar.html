@@ -80,6 +80,11 @@
             </li>
           {% endif %}
 
+          <li class="nav-item">
+            <a class="nav-link">
+            <span class="d-sm-inline d-md-none d-lg-inline">Welcome, {{ get_current_user_attrs().name }}</span></a>
+          </li>
+
           {% if Configs.account_visibility != 'admins' %}
           <li class="nav-item">
             <a class="nav-link" href="{{ url_for('views.notifications') }}">

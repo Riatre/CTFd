@@ -423,10 +423,6 @@ class Challenge(Resource):
         else:
             solve_count, solved_by_user = 0, False
 
-        # Hide solve counts if we are hiding solves/accounts
-        if scores_visible() is False or accounts_visible() is False:
-            solve_count = None
-
         if authed():
             # Get current attempts for the user
             attempts = Submissions.query.filter_by(

@@ -1,0 +1,79 @@
+{% extends "admin/challenges/update.html" %}
+
+{% block value %}
+<div class="form-group">
+	<label for="value">Point Value<br>
+		<small class="form-text text-muted">
+			This is how many points the challenge is worth.
+		</small>
+	</label>
+	<input type="number" class="form-control" name="value" value="{{ challenge.value }}" required>
+</div>
+{% endblock %}
+
+{% block attribution %}
+
+<div class="form-group">
+	<label>
+		Start Time (UTC Timestamp):<br>
+		<small class="form-text text-muted">
+			Start time is the time when the challenge will be active.
+		</small>
+	</label>
+	<input type="number" class="form-control" name="start_time" value="{{ challenge.start_time.timestamp() | int }}" required>
+</div>
+
+<div class="form-group">
+	<label>
+		End Time (UTC Timestamp):<br>
+		<small class="form-text text-muted">
+			End time is the time when the challenge will be inactive.
+		</small>
+	</label>
+	<input type="number" class="form-control" name="end_time" value="{{ challenge.end_time.timestamp() | int }}" required>
+</div>
+
+<div class="form-group">
+	<label>
+		Hint 1:<br>
+		<small class="form-text text-muted">
+			Hint 1 is the first hint for the challenge.
+		</small>
+	</label>
+	<input type="text" class="form-control" name="hint1" value="{{ challenge.hint1 }}" required>
+</div>
+
+<div class="form-group">
+	<label for="value">Hint 1 Release at +X Minutes<br>
+		<small class="form-text text-muted">
+			Hint 1 will be released at this many minutes after the challenge starts.
+		</small>
+	</label>
+	<input type="number" class="form-control" name="hint1_release_minutes" value="{{ challenge.hint1_release_minutes }}" required>
+</div>
+
+<div class="form-group">
+	<label>
+		Hint 2:<br>
+		<small class="form-text text-muted">
+			Hint 2 is the second hint for the challenge.
+		</small>
+	</label>
+	<input type="text" class="form-control" name="hint2" value="{{ challenge.hint2 }}" required>
+</div>
+
+<div class="form-group">
+	<label for="value">Hint 2 Release at +X Minutes<br>
+		<small class="form-text text-muted">
+			Hint 2 will be released at this many minutes after the challenge starts.
+		</small>
+	</label>
+	<input type="number" class="form-control" name="hint2_release_minutes" value="{{ challenge.hint2_release_minutes }}" required>
+</div>
+
+{% endblock %}
+
+
+{% block type %}
+<input type="hidden" value="speedrun" name="type" id="chaltype">
+{% endblock %}

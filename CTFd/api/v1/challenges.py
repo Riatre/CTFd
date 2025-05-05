@@ -1,3 +1,4 @@
+import datetime
 from typing import List  # noqa: I001
 
 from flask import abort, render_template, request, url_for
@@ -442,12 +443,13 @@ class Challenge(Resource):
             chal_class.templates["view"].lstrip("/"),
             solves=solve_count,
             solved_by_me=solved_by_user,
-            files=files,
-            tags=tags,
-            hints=[Hints(**h) for h in hints],
+            files=response["files"],
+            tags=response["tags"],
+            hints=[Hints(**h) for h in response["hints"]],
             max_attempts=chal.max_attempts,
             attempts=attempts,
             challenge=chal,
+            now=datetime.datetime.now(),
         )
 
         db.session.close()

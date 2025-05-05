@@ -1,0 +1,157 @@
+<div :class="getStyles()" role="document" x-data="Challenge"
+  x-init="id = {{ challenge.id }}; max_attempts = {{ max_attempts }}; attempts = {{ attempts }}; showSolves()">
+  <div class="modal-content">
+    <div class="modal-body py-4 px-4 px-sm-5">
+      <div>
+        <div>
+          <div role="tabpanel" class="tab-pane fade show active" id="challenge">
+            <h2 class="challenge-name text-center pt-3">
+              {{ challenge.name }}
+            </h2>
+
+            {% if tags %}
+            <div class="challenge-tags text-center pt-2 pb-3">
+              {% block tags %}
+              {% for tag in tags %}
+              <span class="challenge-tag badge bg-info">{{ tag }}</span>
+              {% endfor %}
+              {% endblock %}
+            </div>
+            {% endif %}
+
+            <small class="challenge-attribution text-center text-muted">
+              {% block attribution %}{{ challenge.byline }}{% endblock %}
+            </small>
+
+            <span class="challenge-desc">{% block description %}{% if now >= challenge.start_time %}{{ challenge.html }}{% else %}Challenge starts in {{ (challenge.start_time - now).total_seconds() }} seconds.{% endif %}{% endblock %}
+              </span>
+
+            {% if challenge.connection_info and now >= challenge.start_time %}
+            <div class="mb-2">
+              <span class="challenge-connection-info">
+                {% block connection_info %}
+                {% set conn = challenge.connection_info %}
+                {% if not conn %}
+                {% elif conn.startswith("http") %}
+                {{ conn | urlize(target="_blank") }}
+                {% else %}
+                <code>{{ conn }}</code>
+                {% endif %}
+                {% endblock %}
+              </span>
+            </div>
+            {% endif %}
+
+            {% if hints %}
+            <div class="challenge-hints hint-row row">
+              <div class="col-12 mb-3">
+                {% for hint in hints %}
+                <p>{{ hint.html | safe }}</p>
+                {% endfor %}
+              </div>
+            </div>
+            {% endif %}
+
+            {% if files %}
+            <div class="row challenge-files text-center pb-3">
+              {% for file in files %}
+              <div class="col-md-4 col-sm-4 col-xs-12 file-button-wrapper d-block">
+                {% set segments = file.split('/') %}
+                {% set token = file.split('?') | last %}
+                {% if token %}
+                {% set filename = segments | last | replace("?" + token, "") %}
+                {% else %}
+                {% set filename = segments | last %}
+                {% endif %}
+                <a class="btn btn-info btn-file mb-1 d-inline-block px-2 w-100 text-truncate" href="{{ file }}"
+                  title="{{ filename }}">
+                  <i class="fas fa-download"></i>
+                  <small>
+                    {{ filename }}
+                  </small>
+                </a>
+              </div>
+              {% endfor %}
+            </div>
+            {% endif %}
+
+            <template x-if="max_attempts > 0">
+              <p class="text-center">
+                <span x-text="attempts"></span>/<span x-text="max_attempts"></span> {% trans c=max_attempts %}attempt{%
+                pluralize %}attempts{% endtrans %}
+              </p>
+            </template>
+
+            {% if now >= challenge.start_time %}
+            <div class="row submit-row">
+              <div class="col-12 col-sm-8">
+                {% block input %}
+                <input id="challenge-id" class="challenge-id" type="hidden" value="{{ challenge.id }}">
+                <input id="challenge-input" class="challenge-input form-control" type="text" name="submission"
+                  @keyup.enter="submitChallenge()" placeholder="{% trans %}Flag{% endtrans %}" x-model="submission">
+                {% endblock %}
+              </div>
+
+              <div class="col-12 col-sm-4 mt-3 mt-sm-0 key-submit">
+                {% block submit %}
+                <button id="challenge-submit" class="challenge-submit btn btn-outline-secondary w-100 h-100"
+                  type="submit" @click.debounce.500ms="submitChallenge()">
+                  {% trans %}Submit{% endtrans %}
+                </button>
+                {% endblock %}
+              </div>
+            </div>
+            {% endif %}
+
+            <div class="row notification-row">
+              <div class="col-12">
+                <template x-if="response">
+                  {# This alert is re-used for all alerts, so it's important not to make it dismissible #}
+                  <div class="alert text-center w-100 mt-3" :class="{
+                          'alert-success': response.data.status == 'correct',
+                          'alert-info': response.data.status == 'already_solved',
+                          'alert-danger': response.data.status == 'incorrect',
+                          'alert-warning': response.data.status == 'paused',
+                        }" role="alert">
+                    <strong x-text="response.data.message"></strong>
+                  </div>
+                </template>
+              </div>
+            </div>
+          </div>
+
+          <!-- Solves Section - Always visible -->
+          <template x-if="solves !== null">
+            <div class="solves-section mt-4">
+              {% if solves != None %}
+              <h5 x-text="solves.length + ' Solve' + (solves.length == 1 ? '' : 's')"></h5>
+              {% endif %}
+              <div class="row">
+                <div class="col-md-12">
+                  <table class="table table-striped align-middle text-center">
+                    <thead>
+                      <tr>
+                        <th>{% trans %}Name{% endtrans %}</th>
+                        <th>{% trans %}Date{% endtrans %}</th>
+                      </tr>
+                    </thead>
+                    <tbody id="challenge-solves-names">
+                      <template x-for="solve in solves">
+                        <tr>
+                          <td>
+                            <a :href="solve.account_url" x-text="solve.name"></a>
+                          </td>
+                          <td x-text="solve.date"></td>
+                        </tr>
+                      </template>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </template>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

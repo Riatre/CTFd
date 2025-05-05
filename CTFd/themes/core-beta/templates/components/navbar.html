@@ -80,6 +80,7 @@
             </li>
           {% endif %}
 
+          {% if Configs.account_visibility != 'admins' %}
           <li class="nav-item">
             <a class="nav-link" href="{{ url_for('views.notifications') }}">
               <span data-bs-toggle="tooltip" data-bs-placement="bottom" title="{% trans %}Notifications{% endtrans %}">
@@ -92,6 +93,7 @@
               </span>
             </a>
           </li>
+          {% endif %}
 
           {% if Configs.user_mode == "teams" %}
             <li class="nav-item">
@@ -107,6 +109,7 @@
             </li>
           {% endif %}
 
+          {% if Configs.account_visibility != 'admins' %}
           <li class="nav-item">
             <a class="nav-link" href="{{ url_for('users.private') }}">
               <span data-bs-toggle="tooltip" data-bs-placement="bottom" title="{% trans %}Profile{% endtrans %}">
@@ -118,7 +121,9 @@
               </span>
             </a>
           </li>
+          {% endif %}
 
+          {% if Configs.account_visibility != 'admins' %}
           <li class="nav-item">
             <a class="nav-link" href="{{ url_for('views.settings') }}">
               <span data-bs-toggle="tooltip" data-bs-placement="bottom" title="{% trans %}Settings{% endtrans %}">
@@ -130,6 +135,7 @@
               </span>
             </a>
           </li>
+          {% endif %}
 
           <li class="nav-item">
             <a class="nav-link" href="{{ url_for('auth.logout') }}">

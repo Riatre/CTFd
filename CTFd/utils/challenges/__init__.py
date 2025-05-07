@@ -25,7 +25,7 @@ def get_all_challenges(
     chal_q = Challenges.query
     challenge_subset_cond = ()
     if challenge_subset is not None:
-        challenge_subset_cond = Challenges.id.in_(challenge_subset)
+        challenge_subset_cond = (Challenges.id.in_(challenge_subset),)
     # Admins can see hidden and locked challenges in the admin view
     if admin is False:
         chal_q = chal_q.filter(
@@ -58,7 +58,7 @@ def get_solves_for_challenge_id(challenge_id, freeze=False, user_subset=None):
     Model = get_model()
     user_subset_cond = ()
     if user_subset is not None:
-        user_subset_cond = Model.name.in_(user_subset)
+        user_subset_cond = (Model.name.in_(user_subset),)
     # Note that we specifically query for the Solves.account.name
     # attribute here because it is faster than having SQLAlchemy
     # query for the attribute directly and it's unknown what the
@@ -125,7 +125,7 @@ def get_solve_counts_for_challenges(challenge_id=None, admin=False, user_subset=
     )
     user_subset_cond = ()
     if user_subset is not None:
-        user_subset_cond = AccountModel.name.in_(user_subset)
+        user_subset_cond = (AccountModel.name.in_(user_subset),)
     solves_q = (
         db.session.query(
             Solves.challenge_id,
@@ -183,5 +183,5 @@ def challenges_in_same_zone(user):
         return None
     for ch, zone in czp:
         if zone == target_zone:
-            res.append(ch)
+            res.append(int(ch))
     return res

@@ -152,6 +152,15 @@ class SpeedrunChallenge(BaseChallenge):
                     "content": f"Challenge ends in {(challenge.end_time - now).total_seconds()} seconds.",
                 }
             )
+        elif now > challenge.end_time:
+            hints.append(
+                {
+                    "id": 1000,
+                    "cost": 0,
+                    "title": "End countdown",
+                    "content": "Challenge closed. No more submissions accepted.",
+                }
+            )
         data = OverrideHintsDict(data)
         data.actual_set_hints(hints)
         return data

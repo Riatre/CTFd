@@ -31,6 +31,7 @@ from CTFd.utils.challenges import (
     get_solve_ids_for_user_id,
     get_solves_for_challenge_id,
     users_in_same_zone,
+    challenges_in_same_zone,
 )
 from CTFd.utils.config.visibility import (
     accounts_visible,

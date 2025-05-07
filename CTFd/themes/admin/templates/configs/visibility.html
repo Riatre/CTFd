@@ -47,7 +47,7 @@
 		
 		<div class="form-group">
 			{{ form.in_zone_users.label }}
-			{{ form.in_zone_users(class="form-control") }}
+			{{ form.in_zone_users(class="form-control", value=in_zone_users or "") }}
 			<small class="form-text text-muted">
 				{{ form.in_zone_users.description }}
 			</small>
@@ -55,7 +55,7 @@
 
 		<div class="form-group">
 			{{ form.in_zone_challenges.label }}
-			{{ form.in_zone_challenges(class="form-control") }}
+			{{ form.in_zone_challenges(class="form-control", value=in_zone_challenges or "") }}
 			<small class="form-text text-muted">
 				{{ form.in_zone_challenges.description }}
 			</small>

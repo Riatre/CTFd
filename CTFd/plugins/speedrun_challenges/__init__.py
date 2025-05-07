@@ -143,7 +143,7 @@ class SpeedrunChallenge(BaseChallenge):
                     "content": hint2_text,
                 }
             )
-        if now < challenge.end_time:
+        if now < challenge.end_time and challenge.end_time - now < timedelta(days=2):
             hints.append(
                 {
                     "id": 1000,

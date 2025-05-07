@@ -23,10 +23,20 @@
               {% block attribution %}{{ challenge.byline }}{% endblock %}
             </small>
 
-            <span class="challenge-desc">{% block description %}{% if now >= challenge.start_time %}{{ challenge.html }}{% else %}Challenge starts in {{ (challenge.start_time - now).total_seconds() }} seconds.{% endif %}{% endblock %}
+            <span class="challenge-desc">{% block description %}
+              {% if now >= challenge.start_time %}
+              {{ challenge.html }}
+              {% else %}
+              Challenge starts in {{ (challenge.start_time - now).total_seconds() }} seconds.
+              {% endif %}
+              {% if now < challenge.end_time and is_admin() %}
+              <p>The following is only visible to admins for now:</p>
+              {{ challenge.html }}
+              {% endif %}
+              {% endblock %}
               </span>
 
-            {% if challenge.connection_info and now >= challenge.start_time %}
+            {% if challenge.connection_info and (now >= challenge.start_time or is_admin()) %}
             <div class="mb-2">
               <span class="challenge-connection-info">
                 {% block connection_info %}

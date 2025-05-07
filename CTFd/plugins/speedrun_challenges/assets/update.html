@@ -40,7 +40,7 @@
 			Hint 1 is the first hint for the challenge.
 		</small>
 	</label>
-	<input type="text" class="form-control" name="hint1" value="{{ challenge.hint1 }}" required>
+	<input type="text" class="form-control" name="hint1" value="{{ challenge.hint1 }}">
 </div>
 
 <div class="form-group">
@@ -49,7 +49,7 @@
 			Hint 1 will be released at this many minutes after the challenge starts.
 		</small>
 	</label>
-	<input type="number" class="form-control" name="hint1_release_minutes" value="{{ challenge.hint1_release_minutes }}" required>
+	<input type="number" class="form-control" name="hint1_release_minutes" value="{{ challenge.hint1_release_minutes }}">
 </div>
 
 <div class="form-group">
@@ -59,7 +59,7 @@
 			Hint 2 is the second hint for the challenge.
 		</small>
 	</label>
-	<input type="text" class="form-control" name="hint2" value="{{ challenge.hint2 }}" required>
+	<input type="text" class="form-control" name="hint2" value="{{ challenge.hint2 }}">
 </div>
 
 <div class="form-group">
@@ -68,7 +68,7 @@
 			Hint 2 will be released at this many minutes after the challenge starts.
 		</small>
 	</label>
-	<input type="number" class="form-control" name="hint2_release_minutes" value="{{ challenge.hint2_release_minutes }}" required>
+	<input type="number" class="form-control" name="hint2_release_minutes" value="{{ challenge.hint2_release_minutes }}">
 </div>
 
 {% endblock %}

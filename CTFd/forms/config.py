@@ -189,6 +189,14 @@ class VisibilitySettingsForm(BaseForm):
         ],
         default=RegistrationVisibilityTypes.PUBLIC,
     )
+    in_zone_users = StringField(
+        "In-Zone Users",
+        description="Comma-separated list of users in the same zone as the CTF (e.g. user1:zone1,user2:zone2)",
+    )
+    in_zone_challenges = StringField(
+        "In-Zone Challenges",
+        description="Comma-separated list of challenges in corresponding zones (e.g. challenge1:zone1,challenge2:zone2)",
+    )
 
 
 class LocalizationForm(BaseForm):

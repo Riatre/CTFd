@@ -18,9 +18,14 @@ Challenge = namedtuple(
 
 
 @cache.memoize(timeout=60)
-def get_all_challenges(admin=False, field=None, q=None, **query_args):
+def get_all_challenges(
+    admin=False, field=None, q=None, challenge_subset=None, **query_args
+):
     filters = build_model_filters(model=Challenges, query=q, field=field)
     chal_q = Challenges.query
+    challenge_subset_cond = ()
+    if challenge_subset is not None:
+        challenge_subset_cond = Challenges.id.in_(challenge_subset)
     # Admins can see hidden and locked challenges in the admin view
     if admin is False:
         chal_q = chal_q.filter(
@@ -28,7 +33,7 @@ def get_all_challenges(admin=False, field=None, q=None, **query_args):
         )
     chal_q = (
         chal_q.filter_by(**query_args)
-        .filter(*filters)
+        .filter(*filters, *challenge_subset_cond)
         .order_by(Challenges.value, Challenges.id)
     )
     tag_schema = TagSchema(view="user", many=True)
@@ -49,8 +54,11 @@ def get_all_challenges(admin=False, field=None, q=None, **query_args):
 
 
 @cache.memoize(timeout=60)
-def get_solves_for_challenge_id(challenge_id, freeze=False):
+def get_solves_for_challenge_id(challenge_id, freeze=False, user_subset=None):
     Model = get_model()
+    user_subset_cond = ()
+    if user_subset is not None:
+        user_subset_cond = Model.name.in_(user_subset)
     # Note that we specifically query for the Solves.account.name
     # attribute here because it is faster than having SQLAlchemy
     # query for the attribute directly and it's unknown what the
@@ -62,6 +70,7 @@ def get_solves_for_challenge_id(challenge_id, freeze=False):
             Solves.challenge_id == challenge_id,
             Model.banned == False,
             Model.hidden == False,
+            *user_subset_cond,
         )
         .order_by(Solves.date.asc())
     )
@@ -99,7 +108,7 @@ def get_solve_ids_for_user_id(user_id):
 
 
 @cache.memoize(timeout=60)
-def get_solve_counts_for_challenges(challenge_id=None, admin=False):
+def get_solve_counts_for_challenges(challenge_id=None, admin=False, user_subset=None):
     if challenge_id is None:
         challenge_id_filter = ()
     else:
@@ -114,13 +123,21 @@ def get_solve_counts_for_challenges(challenge_id=None, admin=False):
         AccountModel.banned == false(),
         AccountModel.hidden == false(),
     )
+    user_subset_cond = ()
+    if user_subset is not None:
+        user_subset_cond = AccountModel.name.in_(user_subset)
     solves_q = (
         db.session.query(
             Solves.challenge_id,
             sa_func.count(Solves.challenge_id),
         )
         .join(AccountModel)
-        .filter(*challenge_id_filter, freeze_cond, exclude_solves_cond)
+        .filter(
+            *challenge_id_filter,
+            *user_subset_cond,
+            freeze_cond,
+            exclude_solves_cond,
+        )
         .group_by(Solves.challenge_id)
     )
 
@@ -128,3 +145,43 @@ def get_solve_counts_for_challenges(challenge_id=None, admin=False):
     for chal_id, solve_count in solves_q:
         solve_counts[chal_id] = solve_count
     return solve_counts
+
+
+def users_in_same_zone(user):
+    in_zone_users = get_config("in_zone_users")
+    if in_zone_users is None:
+        return None
+    uzp = [item.split(":") for item in in_zone_users.split(",")]
+    res = []
+    target_zone = None
+    for un, zone in uzp:
+        if un == user.name:
+            target_zone = zone
+            break
+    else:
+        return None
+    for un, zone in uzp:
+        if zone == target_zone:
+            res.append(un)
+    return res
+
+
+def challenges_in_same_zone(user):
+    in_zone_challenges = get_config("in_zone_challenges")
+    in_zone_users = get_config("in_zone_users")
+    if in_zone_challenges is None or in_zone_users is None:
+        return None
+    czp = [item.split(":") for item in in_zone_challenges.split(",")]
+    uzp = [item.split(":") for item in in_zone_users.split(",")]
+    res = []
+    target_zone = None
+    for un, zone in uzp:
+        if un == user.name:
+            target_zone = zone
+            break
+    else:
+        return None
+    for ch, zone in czp:
+        if zone == target_zone:
+            res.append(ch)
+    return res

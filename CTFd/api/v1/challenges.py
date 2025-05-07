@@ -30,6 +30,7 @@ from CTFd.utils.challenges import (
     get_solve_counts_for_challenges,
     get_solve_ids_for_user_id,
     get_solves_for_challenge_id,
+    users_in_same_zone,
 )
 from CTFd.utils.config.visibility import (
     accounts_visible,
@@ -144,15 +145,21 @@ class ChallengeList(Resource):
         # Admins get a shortcut to see all challenges despite pre-requisites
         admin_view = is_admin() and request.args.get("view") == "admin"
 
-        # Get a cached mapping of challenge_id to solve_count
-        solve_counts = get_solve_counts_for_challenges(admin=admin_view)
-
         # Get list of solve_ids for current user
         if authed():
             user = get_current_user()
             user_solves = get_solve_ids_for_user_id(user_id=user.id)
+            user_subset = users_in_same_zone(user)
+            challenge_subset = challenges_in_same_zone(user)
         else:
             user_solves = set()
+            user_subset = None
+            challenge_subset = None
+
+        # Get a cached mapping of challenge_id to solve_count
+        solve_counts = get_solve_counts_for_challenges(
+            admin=admin_view, user_subset=user_subset
+        )
 
         # Aggregate the query results into the hashes defined at the top of
         # this block for later use
@@ -165,7 +172,13 @@ class ChallengeList(Resource):
             # `None` for the solve count if visiblity checks fail
             solve_count_dfl = None
 
-        chal_q = get_all_challenges(admin=admin_view, field=field, q=q, **query_args)
+        chal_q = get_all_challenges(
+            admin=admin_view,
+            field=field,
+            q=q,
+            challenge_subset=challenge_subset,
+            **query_args,
+        )
 
         # Iterate through the list of challenges, adding to the object which
         # will be JSONified back to the client
@@ -413,10 +426,14 @@ class Challenge(Resource):
         if authed():
             user = get_current_user()
             user_solves = get_solve_ids_for_user_id(user_id=user.id)
+            user_subset = users_in_same_zone(user)
         else:
             user_solves = []
+            user_subset = None
 
-        solves_count = get_solve_counts_for_challenges(challenge_id=chal.id)
+        solves_count = get_solve_counts_for_challenges(
+            challenge_id=chal.id, user_subset=user_subset
+        )
         if solves_count:
             challenge_id = chal.id
             solve_count = solves_count.get(chal.id)
@@ -740,7 +757,14 @@ class ChallengeSolves(Resource):
             elif is_admin() is True:
                 freeze = False
 
-        response = get_solves_for_challenge_id(challenge_id=challenge_id, freeze=freeze)
+        if authed():
+            user = get_current_user()
+            user_subset = users_in_same_zone(user)
+        else:
+            user_subset = None
+        response = get_solves_for_challenge_id(
+            challenge_id=challenge_id, freeze=freeze, user_subset=user_subset
+        )
 
         return {"success": True, "data": response}
 
